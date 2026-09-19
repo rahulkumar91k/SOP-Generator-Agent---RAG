@@ -1,0 +1,37 @@
+Windows Service Issues
+
+Symptoms
+- A service will not start, or starts and immediately stops.
+- Error 1053: the service did not respond to the start or control request in a timely fashion.
+- Error 1069: the service did not start due to a logon failure.
+- A service is stuck in the "Stopping" state and cannot be restarted.
+- An application is unavailable because its background service is not running.
+
+Common causes
+- The service account password expired or was changed.
+- The service account lost the "Log on as a service" right.
+- A dependent service is not running.
+- The service executable path is wrong, or the binary was removed by an antivirus quarantine.
+- The service start type was set to Disabled by a group policy.
+- The process is hung and holds the service in a stopping state.
+
+Troubleshooting steps
+1. Check the current state and start type:
+   Get-Service -Name <ServiceName> | Format-List *
+2. Inspect Event Viewer > Windows Logs > System and Application for the matching error ID and description.
+3. Verify the logon account under Services.msc > Properties > Log On, and re-enter the password if the account was changed.
+4. Confirm dependencies on the Dependencies tab and start any that are stopped.
+5. Confirm the binary path with: sc qc <ServiceName>  and check that the file exists.
+6. Set the correct start type and start the service:
+   Set-Service -Name <ServiceName> -StartupType Automatic
+   Start-Service -Name <ServiceName>
+7. If the service is stuck stopping, find the PID with sc queryex <ServiceName> and end it with
+   taskkill /PID <pid> /F, then start the service again.
+
+Resolution
+Restore the correct logon credentials and service rights, start any missing dependencies, set the start type back to Automatic and start the service. Where the process is hung, terminate the PID and restart the service.
+
+Verification
+- Get-Service <ServiceName> reports Status Running.
+- The application or feature that depends on the service responds normally.
+- No new service errors appear in the System event log after a restart of the server.

@@ -1,0 +1,34 @@
+Network Connectivity Issues on Servers
+
+Symptoms
+- The server cannot reach internal or external hosts.
+- Name resolution fails, and applications report "host not found".
+- Downloads time out, including Windows Update and WSUS synchronisation.
+- Intermittent packet loss or high latency reported by monitoring.
+
+Common causes
+- Incorrect IP address, subnet mask or default gateway.
+- DNS server entries are wrong or the DNS service is unreachable.
+- A firewall rule or network ACL blocks the required port.
+- A proxy is required but not configured for the system account.
+- The network adapter is disabled, or the switch port or VLAN is misconfigured.
+- Expired DHCP lease or duplicate IP address on the segment.
+
+Troubleshooting steps
+1. Check the adapter configuration: ipconfig /all  or  Get-NetIPConfiguration
+2. Test basic reachability: ping the default gateway, then an internal server, then 8.8.8.8.
+3. Test name resolution: nslookup <hostname>  and  Resolve-DnsName <hostname>
+4. Test a specific port: Test-NetConnection <host> -Port 443
+5. Flush stale entries: ipconfig /flushdns  and  arp -d *
+6. Check the proxy used by system services: netsh winhttp show proxy
+   and set it if required with netsh winhttp set proxy <server:port>
+7. Review Windows Firewall rules with Get-NetFirewallRule, and confirm with the network team that no upstream ACL blocks the traffic.
+8. Check the adapter link state and driver, and confirm the switch port and VLAN assignment.
+
+Resolution
+Correct the IP, DNS or proxy configuration, or open the required port on the firewall. Where the adapter or switch port is at fault, re-enable the interface or move the server to the correct VLAN.
+
+Verification
+- ping and Test-NetConnection succeed to the target host and port.
+- nslookup returns the expected address from the expected DNS server.
+- The affected application, download or update completes without a timeout.

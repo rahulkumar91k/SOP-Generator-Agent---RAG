@@ -1,0 +1,37 @@
+Disk Space Issues on Windows Servers
+
+Symptoms
+- The C: drive shows low free space or 0 bytes free.
+- Applications fail to write files, and users report "There is not enough space on the disk".
+- Windows Update fails because the staging area cannot be created.
+- Event ID 2013 from srv appears in the System event log warning that a disk is nearly full.
+
+Common causes
+- Large Windows Update cache in C:\Windows\SoftwareDistribution\Download.
+- Growth of the WinSxS component store after many updates.
+- Log files in C:\inetpub\logs, C:\Windows\Logs and application log folders.
+- Old user profiles, temporary files in C:\Windows\Temp and %TEMP%.
+- Volume Shadow Copies or a growing page file.
+- Database or backup files written to the system drive instead of a data drive.
+
+Troubleshooting steps
+1. Check free space per volume:
+   Get-PSDrive -PSProvider FileSystem
+2. Identify the largest folders with a tool such as TreeSize or WizTree, or with PowerShell:
+   Get-ChildItem C:\ -Recurse -File | Sort-Object Length -Descending | Select-Object -First 20
+3. Delete temporary files in C:\Windows\Temp and %TEMP%, and empty the Recycle Bin.
+4. Clear the update cache: stop wuauserv, delete the contents of
+   C:\Windows\SoftwareDistribution\Download, then start wuauserv.
+5. Shrink the component store:
+   DISM /Online /Cleanup-Image /StartComponentCleanup /ResetBase
+6. Review shadow copy usage with vssadmin list shadowstorage and reduce the limit if needed.
+7. Move or archive large log and backup files to a data drive, and configure log rotation.
+8. If the volume is still too small, extend it from free space on the disk using Disk Management or diskpart.
+
+Resolution
+Free at least 10 to 15 percent of the volume, or a minimum of 10 GB on the system drive for patching. Remove temporary files and update caches first, then run component cleanup, then relocate large data files. Extend the volume if the growth is legitimate.
+
+Verification
+- Re-run Get-PSDrive and confirm the free space target is met.
+- Retry the failing operation, such as the patch installation or file write.
+- Confirm no further low disk space warnings appear in the System event log.

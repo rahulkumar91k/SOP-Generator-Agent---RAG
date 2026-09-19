@@ -1,0 +1,39 @@
+Windows Update and Security Patch Troubleshooting
+
+Symptoms
+- A security patch fails to install on a Windows Server.
+- Windows Update returns error codes such as 0x80070005, 0x800f0922 or 0x80248007.
+- The update downloads but rolls back during installation or after reboot.
+- WSUS clients report "Failed" status for a specific KB article.
+
+Common causes
+- The Windows Update (wuauserv) or Background Intelligent Transfer Service (BITS) is stopped or stuck.
+- The SoftwareDistribution cache is corrupted.
+- The component store (WinSxS) is damaged.
+- A previous update is still pending and requires a reboot before a new patch can install.
+- Insufficient free space on the system drive for update staging.
+- The server cannot reach Windows Update or the WSUS server because of proxy or firewall rules.
+
+Troubleshooting steps
+1. Check the update history in Settings > Windows Update > Update history, and note the exact KB number and error code.
+2. Review C:\Windows\Logs\CBS\CBS.log and run Get-WindowsUpdateLog in PowerShell to produce WindowsUpdate.log.
+3. Confirm no reboot is pending. In PowerShell check the registry key
+   HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending.
+4. Stop the update services, clear the cache and restart them:
+   net stop wuauserv
+   net stop bits
+   rename C:\Windows\SoftwareDistribution SoftwareDistribution.old
+   net start wuauserv
+   net start bits
+5. Repair the component store:
+   DISM /Online /Cleanup-Image /RestoreHealth
+   sfc /scannow
+6. Retry the installation, or download the standalone .msu package from the Microsoft Update Catalog and install it manually.
+
+Resolution
+Clearing the SoftwareDistribution folder and repairing the component store with DISM and SFC resolves most failed patch installations. If the patch still fails, install the standalone MSU package from the Microsoft Update Catalog.
+
+Verification
+- Run: wmic qfe list brief | findstr KBxxxxxxx  or  Get-HotFix -Id KBxxxxxxx
+- Confirm the update shows as "Successfully installed" in Update history.
+- Confirm no new errors appear in the Setup and System event logs after the reboot.
